@@ -1,0 +1,23 @@
+[project]
+name = "gliner-it-job-skills-ner"
+version = "0.1.0"
+description = "Fine-tuned GLiNER model and tools for extracting IT job skills from resumes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Dinesh Sivaji" }
+]
+dependencies = [
+  "gliner>=0.2.25",
+  "huggingface_hub>=1.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "rapidfuzz>=3.9.0",
+]
+
+[tool.uv]
+package = "src"
+
