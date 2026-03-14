@@ -113,7 +113,7 @@ The script:
 
 `src/resume_parser.py` implements a **2‑stage pipeline**:
 
-1. **GLiNER model** (`dineshsivaji/gliner-resume-ner-medium`)
+1. **GLiNER model** (`dineshsivaji/gliner-it-job-skills-ner`)
    - Predicts entities for labels:
      - Trained: `TECHNICAL_SKILL`, `JOB_TITLE`
      - Optional zero‑shot: `SOFT_SKILL`, `CERTIFICATION`, `EDUCATION`, `YEARS_OF_EXPERIENCE`
