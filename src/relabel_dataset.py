@@ -43,6 +43,8 @@ LABEL_MAP = {
     "IT SKILLS":            "TECHNICAL_SKILL",
     "IT TECHNOLOGIES":      "TECHNICAL_SKILL",
     "PROGRAMMING_LANGUAGE": "TECHNICAL_SKILL",
+    "DISTRIBUTED_SYSTEMS":  "TECHNICAL_SKILL",
+    "BIG_DATA":             "TECHNICAL_SKILL",
 
     # Job title variants → JOB_TITLE
     "JOB_POSITION":         "JOB_TITLE",
@@ -56,6 +58,20 @@ LABEL_MAP = {
     "JOB TYPE":             None,
 }
 
+# ── Span blocklist ───────────────────────────────────────────────────────────
+# Section-header tokens and filler words that get mislabelled as TECHNICAL_SKILL.
+# Checked after lowercasing + stripping trailing punctuation.
+
+SPAN_BLOCKLIST = {
+    "role", "required", "responsibilities", "qualifications",
+    "preferred", "experience", "requirements", "description",
+    "summary", "overview", "about", "duties", "skills",
+    "desired", "minimum", "must", "nice", "bonus",
+    "designing", "developing", "implementing", "building",
+    "maintaining", "managing", "leading", "working",
+    "ability", "strong", "excellent", "good",
+}
+
 VALID_LABELS = {
     "TECHNICAL_SKILL",
     "JOB_TITLE",
@@ -64,17 +80,26 @@ VALID_LABELS = {
 
 # ── Core re-labelling ────────────────────────────────────────────────────────
 
+def _is_blocklisted(tokens: list[str], start: int, end: int) -> bool:
+    """Check if a span's text matches the blocklist (section headers / filler)."""
+    span_text = " ".join(tokens[start: end + 1]).lower().strip(" ,.:;-–—")
+    return span_text in SPAN_BLOCKLIST
+
+
 def relabel_example(example: dict) -> dict | None:
     """
     Re-label a single training example.
     Returns None if the example ends up with zero NER spans (e.g. all dropped).
     """
+    tokens = example["tokenized_text"]
     new_ner = []
     for span in example["ner"]:
         start, end, label = span
         new_label = LABEL_MAP.get(label)
         if new_label is None:
-            continue  # drop this span
+            continue  # drop this span (sparse label)
+        if new_label == "TECHNICAL_SKILL" and _is_blocklisted(tokens, start, end):
+            continue  # drop noisy section-header spans
         new_ner.append([start, end, new_label])
 
     if not new_ner:
@@ -144,12 +169,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Re-label GLiNER training dataset")
     parser.add_argument(
         "--input",
-        default="/kaggle/input/datasets/dineshsivaji/gliner-synth-it-skills/synthetic_gliner_dataset.json",
+        default="src/training_data/synthetic_gliner_dataset.json",
         help="Path to original dataset JSON",
     )
     parser.add_argument(
         "--output",
-        default="/kaggle/working/synthetic_gliner_relabelled.json",
+        default="src/training_data/synthetic_gliner_relabelled.json",
         help="Path to write re-labelled dataset JSON",
     )
     args = parser.parse_args()

@@ -11,6 +11,7 @@ authors = [
 dependencies = [
   "gliner>=0.2.25",
   "huggingface_hub>=1.7.0",
+  "accelerate>=1.1.0",
 ]
 
 [project.optional-dependencies]
@@ -19,5 +20,5 @@ dev = [
 ]
 
 [tool.uv]
-package = "src"
+package = true
 

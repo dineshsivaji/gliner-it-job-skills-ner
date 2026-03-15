@@ -113,13 +113,15 @@ class ResumeParser:
 
         for chunk in chunks:
             # Run trained labels at normal threshold
-            raw_entities.extend(
-                self.model.predict_entities(chunk, TRAINED_LABELS, threshold=self.threshold)
-            )
+            if TRAINED_LABELS:
+                raw_entities.extend(
+                    self.model.predict_entities(chunk, TRAINED_LABELS, threshold=self.threshold)
+                )
             # Run zero-shot labels at higher threshold to reduce false positives
-            raw_entities.extend(
-                self.model.predict_entities(chunk, ZEROSHOT_LABELS, threshold=ZEROSHOT_THRESHOLD)
-            )
+            if ZEROSHOT_LABELS:
+                raw_entities.extend(
+                    self.model.predict_entities(chunk, ZEROSHOT_LABELS, threshold=ZEROSHOT_THRESHOLD)
+                )
 
         # Deduplicate by (text, label), keep highest score
         seen: dict[tuple[str, str], float] = {}
@@ -129,8 +131,8 @@ class ResumeParser:
                 seen[key] = e["score"]
 
         deduped = [
-            {"text": text, "label": label, "score": score}
-            for (text, label), score in seen.items()
+            {"text": span_text, "label": label, "score": score}
+            for (span_text, label), score in seen.items()
         ]
 
         # Enrich TECHNICAL_SKILL with fine-grained category
