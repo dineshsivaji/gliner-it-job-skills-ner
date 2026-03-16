@@ -63,13 +63,28 @@ LABEL_MAP = {
 # Checked after lowercasing + stripping trailing punctuation.
 
 SPAN_BLOCKLIST = {
-    "role", "required", "responsibilities", "qualifications",
-    "preferred", "experience", "requirements", "description",
+    # Section headers
+    "role", "responsibilities", "qualifications",
+    "experience", "requirements", "description",
     "summary", "overview", "about", "duties", "skills",
-    "desired", "minimum", "must", "nice", "bonus",
+    # Adjectives / filler
+    "required", "preferred", "desired", "minimum", "must", "nice", "bonus",
+    "ability", "strong", "excellent", "good", "effective", "high",
+    "proficient", "familiar", "knowledge", "understanding",
+    # Generic action verbs
     "designing", "developing", "implementing", "building",
     "maintaining", "managing", "leading", "working",
-    "ability", "strong", "excellent", "good",
+    "creating", "supporting", "delivering", "ensuring",
+    "collaborating", "contributing", "utilizing", "leveraging",
+    "optimizing", "analyzing", "testing", "deploying",
+    # Generic nouns that are not actual skills
+    "data", "solutions", "systems", "applications",
+    "tools", "services", "platform", "platforms",
+    "technologies", "environment", "infrastructure",
+    "software", "code", "projects", "team", "business",
+    "quality", "performance", "security", "scalability",
+    "integration", "development", "engineering", "architecture",
+    "drive", "deliver", "work", "closely",
 }
 
 VALID_LABELS = {
@@ -78,12 +93,38 @@ VALID_LABELS = {
 }
 
 
+# ── Punctuation that should never be part of a span boundary ─────────────────
+
+_STRIP_CHARS = " ,.;:!?\"'`()[]{}/-–—"
+
+
 # ── Core re-labelling ────────────────────────────────────────────────────────
+
+def _strip_span_punct(tokens: list[str], start: int, end: int) -> tuple[int, int] | None:
+    """
+    Trim leading/trailing tokens that are pure punctuation.
+    Returns the adjusted (start, end) or None if the span collapses.
+    """
+    boundary = set(_STRIP_CHARS) - {" "}
+    # Shrink from the right while the token is only punctuation
+    while end >= start and all(c in boundary for c in tokens[end]):
+        end -= 1
+    # Shrink from the left while the token is only punctuation
+    while start <= end and all(c in boundary for c in tokens[start]):
+        start += 1
+    if start > end:
+        return None
+    return start, end
+
+
+def _span_text(tokens: list[str], start: int, end: int) -> str:
+    """Join tokens and strip boundary punctuation for comparison."""
+    return " ".join(tokens[start: end + 1]).lower().strip(_STRIP_CHARS)
+
 
 def _is_blocklisted(tokens: list[str], start: int, end: int) -> bool:
     """Check if a span's text matches the blocklist (section headers / filler)."""
-    span_text = " ".join(tokens[start: end + 1]).lower().strip(" ,.:;-–—")
-    return span_text in SPAN_BLOCKLIST
+    return _span_text(tokens, start, end) in SPAN_BLOCKLIST
 
 
 def relabel_example(example: dict) -> dict | None:
@@ -95,11 +136,30 @@ def relabel_example(example: dict) -> dict | None:
     new_ner = []
     for span in example["ner"]:
         start, end, label = span
+
+        # ── Validate indices ──
+        if start < 0 or end >= len(tokens) or start > end:
+            continue
+
         new_label = LABEL_MAP.get(label)
         if new_label is None:
             continue  # drop this span (sparse label)
+
+        # ── Trim punctuation from span boundaries ──
+        trimmed = _strip_span_punct(tokens, start, end)
+        if trimmed is None:
+            continue  # span was only punctuation
+        start, end = trimmed
+
+        # ── Drop noisy section-header / filler spans ──
         if new_label == "TECHNICAL_SKILL" and _is_blocklisted(tokens, start, end):
-            continue  # drop noisy section-header spans
+            continue
+
+        # ── Drop single-char spans (likely annotation noise) ──
+        span_text = _span_text(tokens, start, end)
+        if len(span_text) < 2:
+            continue
+
         new_ner.append([start, end, new_label])
 
     if not new_ner:
@@ -155,6 +215,31 @@ def relabel_dataset(input_path: str, output_path: str) -> None:
         count = after_counts.get(label, 0)
         flag = "⚠️  SPARSE" if count < 100 else "✅"
         print(f"  {label:30s} {count:>6}  {flag}")
+
+    # ── Data quality audit ──
+    punct_spans = 0
+    total_spans = 0
+    skill_counts = []
+    for ex in relabelled:
+        n_skills = 0
+        for s, e, label in ex["ner"]:
+            total_spans += 1
+            span = " ".join(ex["tokenized_text"][s: e + 1])
+            if span[-1:] in ",.;:!?" :
+                punct_spans += 1
+            if label == "TECHNICAL_SKILL":
+                n_skills += 1
+        skill_counts.append(n_skills)
+
+    avg_skills = sum(skill_counts) / len(skill_counts) if skill_counts else 0
+    max_skills = max(skill_counts) if skill_counts else 0
+    over_15 = sum(1 for c in skill_counts if c > 15)
+
+    print(f"\n── Data quality audit ──")
+    print(f"  Spans with trailing punct : {punct_spans}/{total_spans}")
+    print(f"  Avg skills/example        : {avg_skills:.1f}")
+    print(f"  Max skills in one example : {max_skills}")
+    print(f"  Examples with >15 skills  : {over_15}")
 
     # ── Save ──
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)

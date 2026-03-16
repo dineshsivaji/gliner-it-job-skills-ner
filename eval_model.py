@@ -22,6 +22,7 @@ Usage:
 import argparse
 import json
 import random
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 
@@ -52,9 +53,22 @@ def load_test_split(data_path: str) -> list[dict]:
     return test_data
 
 
+def _normalize_span(text: str) -> str:
+    """
+    Normalize a span for fair comparison.
+    Uses the same strip chars as relabel_dataset._span_text() to ensure
+    training/evaluation consistency.
+    """
+    text = text.lower().strip()
+    text = text.strip(" ,.;:!?\"'`()[]{}/-–—")
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
 def tokens_to_text(tokens: list[str], start: int, end: int) -> str:
     """Reconstruct span text from tokenized_text using start/end indices."""
-    return " ".join(tokens[start: end + 1]).lower().strip()
+    raw = " ".join(tokens[start: end + 1])
+    return _normalize_span(raw)
 
 
 def get_gold_spans(example: dict) -> set[tuple[str, str]]:
@@ -67,7 +81,8 @@ def get_gold_spans(example: dict) -> set[tuple[str, str]]:
     for start, end, label in example["ner"]:
         if label in LABELS:
             text = tokens_to_text(tokens, start, end)
-            spans.add((text, label))
+            if text:
+                spans.add((text, label))
     return spans
 
 
@@ -82,7 +97,12 @@ def get_pred_spans(
     tokens = example["tokenized_text"]
     sentence = " ".join(tokens)
     entities = model.predict_entities(sentence, LABELS, threshold=threshold)
-    return {(e["text"].lower().strip(), e["label"]) for e in entities}
+    spans = set()
+    for e in entities:
+        normalized = _normalize_span(e["text"])
+        if normalized:
+            spans.add((normalized, e["label"]))
+    return spans
 
 
 # ── Metrics ───────────────────────────────────────────────────────────────────
