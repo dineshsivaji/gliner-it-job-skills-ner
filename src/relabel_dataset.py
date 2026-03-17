@@ -47,6 +47,7 @@ LABEL_MAP = {
     "BIG_DATA":             "TECHNICAL_SKILL",
 
     # Job title variants → JOB_TITLE
+    "JOB_TITLE":            "JOB_TITLE",
     "JOB_POSITION":         "JOB_TITLE",
     "JOB POSITION":         "JOB_TITLE",
 

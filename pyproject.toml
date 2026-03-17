@@ -3,7 +3,7 @@ name = "gliner-it-job-skills-ner"
 version = "0.1.0"
 description = "Fine-tuned GLiNER model and tools for extracting IT job skills from resumes."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [
   { name = "Dinesh Sivaji" }
