@@ -472,13 +472,13 @@ if __name__ == "__main__":
             sample = tokenize_and_find_entities(temp, pos, selected_skills)
             dataset.append(sample)
 
-    with open("it_training_data.jsonl") as fp:
+    with open("src/training_data/it_training_data.jsonl") as fp:
         for line in fp:
             data = json.loads(line)
             data["tokenized_text"] = data.pop("text")
             data["ner"] = data.pop("spans")
             dataset.append(data)
-    with open("data/data.json", "w") as f:
+    with open("src/training_data/synthetic_gliner_dataset.json", "w") as f:
         json.dump(dataset, f, indent=2)
 
-    print("Successfully saved tokenized data to data/data.json")
+    print("Successfully saved tokenized data")

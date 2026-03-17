@@ -99,6 +99,40 @@ VALID_LABELS = {
 _STRIP_CHARS = " ,.;:!?\"'`()[]{}/-–—"
 
 
+# ── Normalise examples with raw-string text + char-offset spans ──────────────
+
+def _normalise_example(example: dict) -> dict:
+    """
+    If tokenized_text is a plain string (char-level) with dict-style spans,
+    convert to the standard format: token list + token-index spans.
+    """
+    text = example["tokenized_text"]
+    if isinstance(text, list):
+        return example  # already tokenised
+
+    tokens = text.split()
+    # Build a mapping from character offset → token index
+    char_to_tok = {}
+    pos = 0
+    for idx, tok in enumerate(tokens):
+        for j in range(len(tok)):
+            char_to_tok[pos + j] = idx
+        pos += len(tok) + 1  # +1 for the space
+
+    new_ner = []
+    for span in example["ner"]:
+        if isinstance(span, dict):
+            start_char, end_char, label = span["start"], span["end"], span["label"]
+        else:
+            start_char, end_char, label = span
+        start_tok = char_to_tok.get(start_char)
+        end_tok = char_to_tok.get(end_char)
+        if start_tok is not None and end_tok is not None:
+            new_ner.append([start_tok, end_tok, label])
+
+    return {"tokenized_text": tokens, "ner": new_ner}
+
+
 # ── Core re-labelling ────────────────────────────────────────────────────────
 
 def _strip_span_punct(tokens: list[str], start: int, end: int) -> tuple[int, int] | None:
@@ -133,6 +167,7 @@ def relabel_example(example: dict) -> dict | None:
     Re-label a single training example.
     Returns None if the example ends up with zero NER spans (e.g. all dropped).
     """
+    example = _normalise_example(example)
     tokens = example["tokenized_text"]
     new_ner = []
     for span in example["ner"]:
@@ -178,7 +213,8 @@ def relabel_dataset(input_path: str, output_path: str) -> None:
     # ── Before stats ──
     before_counts: Counter = Counter()
     for ex in data:
-        for _, _, label in ex["ner"]:
+        for span in ex["ner"]:
+            label = span["label"] if isinstance(span, dict) else span[2]
             before_counts[label] += 1
 
     print("\n── Label distribution BEFORE re-labelling ──")
