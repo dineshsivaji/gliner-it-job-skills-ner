@@ -10,41 +10,95 @@ SKILLS = {
     "PROGRAMMING_LANGUAGE": [
         "Python", "Java", "JavaScript", "TypeScript", "C", "C++", "C#", "Go", "Rust", "Ruby", "PHP",
         "Swift", "Kotlin", "Scala", "Dart", "Objective-C", "MATLAB", "R", "Julia",
-        "Bash", "Groovy", "Haskell", "Elixir", "Zig"
+        "Bash", "Groovy", "Haskell", "Elixir", "Zig", "Perl", "Lua", "PowerShell",
+        "Shell", "Golang",
     ],
     "JAVA_ECOSYSTEM": [
-        "Spring", "Spring Boot", "Hibernate", "JPA", "Micronaut", "Quarkus", "Maven", "Gradle"
+        "Spring", "Spring Boot", "Spring MVC", "Hibernate", "JPA", "Micronaut", "Quarkus",
+        "Maven", "Gradle", "JUnit", "Mockito", "Struts", "Tomcat",
     ],
     "PYTHON_ECOSYSTEM": [
-        "Django", "Flask", "FastAPI", "Pandas", "NumPy", "PyTorch", "TensorFlow", "Scikit-learn"
+        "Django", "Flask", "FastAPI", "Pandas", "NumPy", "PyTorch", "TensorFlow", "Scikit-learn",
+        "SQLAlchemy", "Celery", "Pydantic", "SciPy", "Matplotlib", "Seaborn",
+        "Pytest", "Poetry", "Uvicorn", "Gunicorn", "Alembic", "Aiohttp", "Asyncio",
     ],
     "JS_ECOSYSTEM": [
-        "Node.js", "Express.js", "React", "Next.js", "Angular", "Vue.js", "Svelte", "Redux"
+        "Node.js", "Express.js", "React", "Next.js", "Angular", "Vue.js", "Svelte", "Redux",
+        "Nuxt", "Nest.js", "Webpack", "Vite", "Jest", "GraphQL",
+        "Tailwind", "TailwindCSS", "jQuery", "Socket.io", "HTML", "CSS",
+    ],
+    "AI_ML": [
+        "NLP", "Natural Language Processing", "Computer Vision", "Machine Learning",
+        "Deep Learning", "Neural Networks", "LLM", "BERT", "GPT", "RAG",
+        "Keras", "XGBoost", "LightGBM", "Hugging Face", "HuggingFace", "Transformers",
+        "LangChain", "OpenAI", "MLflow", "Weights and Biases",
+        "Reinforcement Learning", "Generative AI", "GLiNER",
+    ],
+    "MOBILE": [
+        "React Native", "Flutter", "Android", "iOS", "Xcode", "Expo",
+        "Swift UI", "Kotlin Multiplatform",
+    ],
+    "IT_TOOLS": [
+        "Jira", "Confluence", "Figma", "Postman", "Swagger",
+        "VS Code", "IntelliJ", "Visual Studio", "GitHub", "GitLab", "Bitbucket",
+        "Notion", "Slack", "SonarQube", "Splunk", "Tableau", "Power BI", "Excel",
     ],
     "DISTRIBUTED_SYSTEMS": [
         "Distributed Systems", "Distributed Computing", "Microservices",
         "Load Balancing", "Service Mesh", "Consensus Algorithms",
-        "gRPC", "Message Queues", "Scalability", "Fault Tolerance"
+        "gRPC", "Message Queues", "Scalability", "Fault Tolerance",
+        "RabbitMQ", "Istio", "REST", "REST API",
     ],
     "BIG_DATA": [
         "Apache Spark", "Hadoop", "Flink", "Kafka", "Cassandra", "ClickHouse", "Elasticsearch",
-        "Airflow", "BigQuery", "Snowflake"
+        "Airflow", "BigQuery", "Snowflake", "Hive", "Presto", "dbt", "ETL",
+        "Data Pipeline", "Data Engineering", "Data Warehouse",
     ],
     "DATABASE": [
-        "MySQL", "PostgreSQL", "MongoDB", "Redis", "DynamoDB", "Firebase", "Neo4j"
+        "MySQL", "PostgreSQL", "MongoDB", "Redis", "DynamoDB", "Firebase", "Neo4j",
+        "SQLite", "Oracle", "SQL Server", "MSSQL", "InfluxDB", "SQL", "NoSQL",
+        "Redshift",
     ],
     "DEVOPS": [
-        "Docker", "Kubernetes", "Jenkins", "Terraform", "Ansible", "GitHub Actions"
+        "Docker", "Kubernetes", "Jenkins", "Terraform", "Ansible", "GitHub Actions",
+        "K8s", "Helm", "GitLab CI", "Azure DevOps", "CircleCI",
+        "Chef", "Puppet", "Prometheus", "Grafana", "ELK",
+        "Logstash", "Kibana", "Datadog", "Nginx", "Linux", "Unix",
+        "CI/CD", "Git", "Grunt",
     ],
     "CLOUD": [
-        "AWS", "Azure", "GCP", "Google Cloud", "Cloudflare"
-    ]
+        "AWS", "Azure", "GCP", "Google Cloud", "Cloudflare",
+        "S3", "EC2", "Lambda", "CloudFormation", "Pulumi",
+        "Cloud Functions", "App Service", "Azure Functions", "CosmosDB",
+        "Azure AD", "KeyVault", "Vercel", "Netlify", "Heroku", "DigitalOcean",
+    ],
 }
 
 POSITIONS = [
+    # Engineering
     "Software Engineer", "Backend Developer", "Frontend Developer", "Full Stack Developer",
-    "Data Scientist", "DevOps Engineer", "Mobile Developer", "ML Engineer",
-    "Distributed Systems Engineer", "SRE"
+    "Senior Software Engineer", "Staff Engineer", "Principal Engineer",
+    "Software Development Engineer", "Application Developer",
+    # Data & ML
+    "Data Scientist", "Data Engineer", "Data Analyst", "ML Engineer",
+    "Machine Learning Engineer", "AI Engineer", "NLP Engineer",
+    "Business Intelligence Analyst", "Analytics Engineer",
+    # DevOps & Infrastructure
+    "DevOps Engineer", "SRE", "Site Reliability Engineer", "Platform Engineer",
+    "Infrastructure Engineer", "Cloud Engineer", "Cloud Architect",
+    # Mobile
+    "Mobile Developer", "iOS Developer", "Android Developer",
+    # Security
+    "Security Engineer", "Cybersecurity Analyst", "Application Security Engineer",
+    # QA & Testing
+    "QA Engineer", "Test Engineer", "SDET", "Quality Assurance Lead",
+    # Management & Architecture
+    "Engineering Manager", "Technical Lead", "Solutions Architect",
+    "Software Architect", "Product Manager", "Technical Program Manager",
+    "CTO", "VP of Engineering",
+    # Specialised
+    "Database Administrator", "Network Engineer", "Systems Administrator",
+    "Embedded Systems Engineer", "Blockchain Developer", "Game Developer",
 ]
 
 # --------------------------------------------------
@@ -405,11 +459,43 @@ SOFT_NEGATIVE_TEMPLATES = [
 ]
 
 TEMPLATES = [
+    # ── Original job-posting style ──
     "Expertise in {skills} is required for this role.",
     "Hands-on experience with {skills} required.",
     "Looking for a {position} with skills in {skills}.",
     "The ideal candidate has worked with {skills}.",
-    "Required: {skills}."
+    "Required: {skills}.",
+
+    # ── Resume bullet-point style ──
+    "Built and maintained production services using {skills}.",
+    "Developed scalable microservices with {skills}.",
+    "Designed and implemented solutions using {skills}.",
+    "Led migration of legacy systems to {skills}.",
+    "Improved system reliability by leveraging {skills}.",
+    "Automated deployment pipelines using {skills}.",
+    "Contributed to open-source projects involving {skills}.",
+    "Mentored junior developers on {skills} best practices.",
+
+    # ── Section-header / skills-list style ──
+    "Technical Skills: {skills}.",
+    "Technologies: {skills}.",
+    "Core Competencies: {skills}.",
+    "Tools and Frameworks: {skills}.",
+    "Proficient in {skills}.",
+    "Strong background in {skills}.",
+
+    # ── Experience description style ──
+    "As a {position}, managed infrastructure built on {skills}.",
+    "Worked as a {position} delivering features with {skills}.",
+    "Served as {position} responsible for {skills} stack.",
+    "In this role the {position} used {skills} daily.",
+
+    # ── Multi-sentence / context-rich style ──
+    "The team adopted {skills} to improve developer productivity.",
+    "Migrated the monolith to {skills} reducing deploy times by 60 percent.",
+    "Evaluated and selected {skills} for the new platform architecture.",
+    "Integrated {skills} into the existing CI/CD pipeline.",
+    "The project required deep knowledge of {skills}.",
 ]
 
 
