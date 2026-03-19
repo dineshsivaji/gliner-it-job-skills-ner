@@ -32,7 +32,7 @@ from gliner import GLiNER
 
 DEFAULT_MODEL = "dineshsivaji/gliner-it-job-skills-ner"
 DEFAULT_DATA = "src/training_data/synthetic_gliner_relabelled.json"
-DEFAULT_THRESHOLD = 0.5  # lower than inference (0.65) to get full precision/recall curve
+DEFAULT_THRESHOLD = 0.5  # lower than inference (0.6) to get full precision/recall curve
 LABELS = ["TECHNICAL_SKILL", "JOB_TITLE"]
 TEST_SPLIT = 0.1  # must match train_gliner_resume.py split
 RANDOM_SEED = 42

@@ -101,3 +101,14 @@ class TestNormaliseSkill:
         # 'js' after removing suffix could be empty, but the function returns
         # the original if stripped becomes empty
         assert result == "js"
+
+    @pytest.mark.parametrize("input_text,expected", [
+        ("three.js", "three.js"),
+        ("p5.js",    "p5.js"),
+        ("d3.js",    "d3.js"),
+        ("chart.js", "chart.js"),
+        ("Three.js", "three.js"),
+    ])
+    def test_preserves_known_js_frameworks(self, input_text, expected):
+        """Known .js frameworks should keep their suffix."""
+        assert normalise_skill(input_text) == expected

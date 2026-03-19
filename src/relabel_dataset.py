@@ -21,6 +21,7 @@ All others                                         →  (dropped)
 
 import json
 import argparse
+import warnings
 from collections import Counter
 from pathlib import Path
 
@@ -97,6 +98,9 @@ SPAN_BLOCKLIST = {
     "information technology", "computer engineering",
     # Sentence fragments / noise
     "customer satisfaction", "monitoring system",
+    "improve customer satisfaction", "integrated agent monitoring system",
+    # Project names
+    "picoshell",
 }
 
 VALID_LABELS = {
@@ -173,6 +177,10 @@ def _is_blocklisted(tokens: list[str], start: int, end: int) -> bool:
     return _span_text(tokens, start, end) in SPAN_BLOCKLIST
 
 
+# Collects unknown labels encountered during relabelling
+_unknown_labels: set[str] = set()
+
+
 def relabel_example(example: dict) -> dict | None:
     """
     Re-label a single training example.
@@ -190,7 +198,9 @@ def relabel_example(example: dict) -> dict | None:
 
         new_label = LABEL_MAP.get(label)
         if new_label is None:
-            continue  # drop this span (sparse label)
+            if label not in LABEL_MAP:
+                _unknown_labels.add(label)
+            continue  # drop this span (sparse label or unknown)
 
         # ── Trim punctuation from span boundaries ──
         trimmed = _strip_span_punct(tokens, start, end)
@@ -233,6 +243,7 @@ def relabel_dataset(input_path: str, output_path: str) -> None:
         print(f"  {label:30s} {count:>6}")
 
     # ── Re-label ──
+    _unknown_labels.clear()
     relabelled = []
     dropped_examples = 0
     for ex in data:
@@ -241,6 +252,12 @@ def relabel_dataset(input_path: str, output_path: str) -> None:
             dropped_examples += 1
         else:
             relabelled.append(result)
+
+    if _unknown_labels:
+        warnings.warn(
+            f"Found {len(_unknown_labels)} label(s) not in LABEL_MAP "
+            f"(possible annotation errors): {sorted(_unknown_labels)}"
+        )
 
     # ── After stats ──
     after_counts: Counter = Counter()

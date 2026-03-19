@@ -451,7 +451,7 @@ def tokenize_and_find_entities(template, position, skills_list):
     for i in range(len(tokens) - pos_len + 1):
         sub_section = " ".join([t.strip(",.;") for t in tokens[i:i + pos_len]])
         if sub_section.lower() == position.lower():
-            entities.append([i, i + pos_len - 1, "JOB_POSITION"])
+            entities.append([i, i + pos_len - 1, "JOB_TITLE"])
 
     return {"tokenized_text": tokens, "ner": entities}
 

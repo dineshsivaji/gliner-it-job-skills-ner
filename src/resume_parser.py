@@ -14,7 +14,7 @@ Usage:
 import argparse
 import re
 from gliner import GLiNER
-from .taxonomy_mapper import TaxonomyMapper
+from .taxonomy_mapper import TaxonomyMapper, ENTITY_BLOCKLIST, _JOB_TITLE_BLOCKLIST_PATTERNS
 
 # ── Config ───────────────────────────────────────────────────────────────────
 
@@ -48,15 +48,26 @@ ZEROSHOT_THRESHOLD = 0.75
 _SUFFIX_RE = re.compile(r"[.\-]?js$", re.IGNORECASE)
 _STRIP_CHARS = " ,.;:!?\"'`()[]{}/-–—"
 
+# Frameworks where ".js" is part of the canonical name — don't strip suffix
+_JS_PRESERVE = frozenset({
+    "three.js", "p5.js", "d3.js", "chart.js", "anime.js",
+    "paper.js", "matter.js", "tone.js", "brain.js",
+})
+
 
 def normalise_skill(text: str) -> str:
     """
     Normalise a skill string for deduplication.
 
     Collapses variants like 'React.js', 'ReactJS', 'react' into the same key.
+    Preserves known .js frameworks (three.js, p5.js, etc.) where the suffix
+    is part of the canonical name.
     """
     text = text.lower().strip().strip(_STRIP_CHARS)
     text = re.sub(r"\s+", " ", text)
+    # Don't strip suffix for known .js frameworks
+    if text in _JS_PRESERVE:
+        return text
     # Remove trailing .js / -js / js (but not the whole string)
     stripped = _SUFFIX_RE.sub("", text).strip()
     return stripped if stripped else text
@@ -127,7 +138,7 @@ class ResumeParser:
         """
         Parse a resume text.
 
-        TECHNICAL_SKILL and JOB_TITLE use fine-tuned threshold (0.65).
+        TECHNICAL_SKILL and JOB_TITLE use fine-tuned threshold (0.6).
         SOFT_SKILL, CERTIFICATION, EDUCATION, YEARS_OF_EXPERIENCE use
         zero-shot threshold (0.75) to reduce false positives.
 
@@ -136,7 +147,6 @@ class ResumeParser:
             "TECHNICAL_SKILL": {
                 "PYTHON_ECOSYSTEM":    ["Django", "FastAPI"],
                 "CLOUD":               ["AWS", "Azure"],
-                "UNCATEGORIZED":       ["some-tool"],
                 ...
             },
             "JOB_TITLE":           ["Software Engineer", "Tech Lead"],
@@ -196,6 +206,10 @@ class ResumeParser:
                     if not skill:
                         continue
 
+                    # Re-check blocklist on each atomic skill after splitting
+                    if skill.strip().lower() in ENTITY_BLOCKLIST:
+                        continue
+
                     # Recompute category per atomic skill
                     cat = self.mapper.map(skill)
                     if cat == "UNCATEGORIZED":
@@ -225,11 +239,8 @@ class ResumeParser:
                 for cat, skills in sorted(value.items()):
                     print(f"   {cat:25s}: {', '.join(skills)}")
             else:
-                icon = {
-
-                }.get(label, "•")
                 items = value if isinstance(value, list) else [value]
-                print(f"\n{icon} {label}{zs_note}")
+                print(f"\n• {label}{zs_note}")
                 for item in items:
                     print(f"   • {item}")
 
