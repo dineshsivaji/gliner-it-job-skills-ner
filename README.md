@@ -1,3 +1,15 @@
+---
+title: GLiNER IT Job Skills NER
+emoji: 📄
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: "4.0"
+app_file: app.py
+pinned: false
+license: apache-2.0
+---
+
 ## gliner-it-job-skills-ner
 
 Fine-tuned [GLiNER](https://github.com/urchade/gliner) project for extracting **IT job skills and roles** from resumes/CVs.

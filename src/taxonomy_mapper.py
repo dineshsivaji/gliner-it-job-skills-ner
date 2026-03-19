@@ -100,6 +100,14 @@ RAW_TAXONOMY: dict[str, str] = {
     "redux":            "JS_ECOSYSTEM",
     "tailwind":         "JS_ECOSYSTEM",
     "tailwindcss":      "JS_ECOSYSTEM",
+    "reactjs":          "JS_ECOSYSTEM",
+    "angularjs":        "JS_ECOSYSTEM",
+    "expressjs":        "JS_ECOSYSTEM",
+    "jquery":           "JS_ECOSYSTEM",
+    "socket.io":        "JS_ECOSYSTEM",
+    "html":             "JS_ECOSYSTEM",
+    "css":              "JS_ECOSYSTEM",
+    "html/css":         "JS_ECOSYSTEM",
 
     # ── JAVA_ECOSYSTEM ───────────────────────────────────────────────────────
     "spring":           "JAVA_ECOSYSTEM",
@@ -113,6 +121,7 @@ RAW_TAXONOMY: dict[str, str] = {
     "quarkus":          "JAVA_ECOSYSTEM",
     "micronaut":        "JAVA_ECOSYSTEM",
     "struts":           "JAVA_ECOSYSTEM",
+    "tomcat":           "JAVA_ECOSYSTEM",
 
     # ── AI_ML ────────────────────────────────────────────────────────────────
     "tensorflow":       "AI_ML",
@@ -189,6 +198,7 @@ RAW_TAXONOMY: dict[str, str] = {
     "unix":             "DEVOPS",
     "ci/cd":            "DEVOPS",
     "git":              "DEVOPS",
+    "grunt":            "DEVOPS",
 
     # ── DATABASE ─────────────────────────────────────────────────────────────
     "postgresql":       "DATABASE",
@@ -217,6 +227,7 @@ RAW_TAXONOMY: dict[str, str] = {
     "ios":              "MOBILE",
     "xcode":            "MOBILE",
     "expo":             "MOBILE",
+    "exponentjs":       "MOBILE",
 
     # ── IT TOOLS ─────────────────────────────────────────────────────────────
     "jira":             "IT_TOOLS",
@@ -265,7 +276,42 @@ RAW_TAXONOMY: dict[str, str] = {
     "istio":                  "DISTRIBUTED_SYSTEMS",
     "load balancing":         "DISTRIBUTED_SYSTEMS",
     "event driven":           "DISTRIBUTED_SYSTEMS",
+    "rest":                   "DISTRIBUTED_SYSTEMS",
+    "rest api":               "DISTRIBUTED_SYSTEMS",
 }
+
+# ── Entity blocklist ─────────────────────────────────────────────────────────
+# False positives the model extracts with high confidence.
+# Checked case-insensitively after stripping whitespace.
+
+ENTITY_BLOCKLIST: set[str] = {
+    # Generic / vague phrases (TECHNICAL_SKILL false positives)
+    "application development",
+    "web application design",
+    "scripting and coding",
+    "requirements gathering",
+    "ui testing",
+    "product testing and deployment",
+    # UI components / project artifacts
+    "file browser",
+    "code editor",
+    "chat window",
+    # Academic fields / degree names
+    "computer science",
+    "management information systems",
+    "information technology",
+    "computer engineering",
+    # Sentence fragments / noise
+    "improve customer satisfaction",
+    "integrated agent monitoring system",
+    # Project names
+    "picoshell",
+}
+
+# Patterns for JOB_TITLE false positives (e.g. "call center engineering team")
+_JOB_TITLE_BLOCKLIST_PATTERNS: list[re.Pattern] = [
+    re.compile(r"\bteam$", re.IGNORECASE),
+]
 
 # ── Mapper class ──────────────────────────────────────────────────────────────
 
@@ -357,6 +403,28 @@ class TaxonomyMapper:
 
         return "UNCATEGORIZED"
 
+    def filter_entities(self, entities: list[dict]) -> list[dict]:
+        """
+        Remove false-positive entities using ENTITY_BLOCKLIST and
+        label-specific pattern rules.
+        """
+        filtered = []
+        for entity in entities:
+            text = entity.get("text", "").strip().lower()
+            label = entity.get("label", "")
+
+            # Check the global blocklist
+            if text in ENTITY_BLOCKLIST:
+                continue
+
+            # Check JOB_TITLE-specific patterns
+            if label == "JOB_TITLE":
+                if any(p.search(text) for p in _JOB_TITLE_BLOCKLIST_PATTERNS):
+                    continue
+
+            filtered.append(entity)
+        return filtered
+
     def enrich(self, entities: list[dict]) -> list[dict]:
         """
         Enrich a list of GLiNER entity dicts by adding a 'category' key
@@ -370,7 +438,7 @@ class TaxonomyMapper:
               "category": "JS_ECOSYSTEM", "score": 0.91}, ...]
         """
         enriched = []
-        for entity in entities:
+        for entity in self.filter_entities(entities):
             e = dict(entity)
             if e.get("label") == "TECHNICAL_SKILL":
                 e["category"] = self.map(e["text"])
@@ -426,6 +494,20 @@ if __name__ == "__main__":
         ("Jira",            "IT_TOOLS"),
         ("Leadership",      None),   # SOFT_SKILL — not mapped by taxonomy
         ("UnknownTool",     None),   # → UNCATEGORIZED
+        # ── New alias entries ──
+        ("ReactJS",         "JS_ECOSYSTEM"),
+        ("AngularJS",       "JS_ECOSYSTEM"),
+        ("ExpressJS",       "JS_ECOSYSTEM"),
+        ("jQuery",          "JS_ECOSYSTEM"),
+        ("Socket.IO",       "JS_ECOSYSTEM"),
+        ("HTML",            "JS_ECOSYSTEM"),
+        ("CSS",             "JS_ECOSYSTEM"),
+        ("HTML/CSS",        "JS_ECOSYSTEM"),
+        ("ExponentJS",      "MOBILE"),
+        ("Grunt",           "DEVOPS"),
+        ("Tomcat",          "JAVA_ECOSYSTEM"),
+        ("REST",            "DISTRIBUTED_SYSTEMS"),
+        ("REST API",        "DISTRIBUTED_SYSTEMS"),
     ]
 
     print("── Taxonomy Mapper Smoke Test ──\n")
@@ -461,3 +543,40 @@ if __name__ == "__main__":
     summary = mapper.summary(mock_entities)
     for cat, skills in summary.items():
         print(f"  {cat:25s}: {', '.join(skills)}")
+
+    # ── Blocklist filter test ──
+    print("\n── Blocklist Filter Test ──\n")
+    blocklist_entities = [
+        {"text": "Python",                     "label": "TECHNICAL_SKILL", "score": 0.95},
+        {"text": "file browser",               "label": "TECHNICAL_SKILL", "score": 0.80},
+        {"text": "computer science",           "label": "TECHNICAL_SKILL", "score": 0.85},
+        {"text": "application development",    "label": "TECHNICAL_SKILL", "score": 0.78},
+        {"text": "call center engineering team","label": "JOB_TITLE",      "score": 0.70},
+        {"text": "Senior Engineer",            "label": "JOB_TITLE",      "score": 0.92},
+        {"text": "picoshell",                  "label": "TECHNICAL_SKILL", "score": 0.72},
+        {"text": "React",                      "label": "TECHNICAL_SKILL", "score": 0.91},
+    ]
+    filtered = mapper.filter_entities(blocklist_entities)
+    kept_texts = {e["text"] for e in filtered}
+    expected_kept = {"Python", "Senior Engineer", "React"}
+    expected_removed = {"file browser", "computer science", "application development",
+                        "call center engineering team", "picoshell"}
+
+    bl_pass = True
+    for e in blocklist_entities:
+        txt = e["text"]
+        if txt in expected_kept:
+            if txt in kept_texts:
+                print(f"  ✅  KEPT      {txt}")
+            else:
+                print(f"  ❌  WRONGLY REMOVED  {txt}")
+                bl_pass = False
+        elif txt in expected_removed:
+            if txt not in kept_texts:
+                print(f"  ✅  BLOCKED   {txt}")
+            else:
+                print(f"  ❌  WRONGLY KEPT     {txt}")
+                bl_pass = False
+
+    all_pass = all_pass and bl_pass
+    print(f"\n{'All tests passed ✅' if all_pass else 'Some tests failed ❌'}")

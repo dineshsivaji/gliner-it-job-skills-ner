@@ -86,6 +86,17 @@ SPAN_BLOCKLIST = {
     "quality", "performance", "security", "scalability",
     "integration", "development", "engineering", "architecture",
     "drive", "deliver", "work", "closely",
+    # Generic / vague phrases (TECHNICAL_SKILL false positives)
+    "application development", "web application design",
+    "scripting and coding", "requirements gathering",
+    "ui testing", "product testing and deployment",
+    # UI components / project artifacts
+    "file browser", "code editor", "chat window",
+    # Academic fields / degree names
+    "computer science", "management information systems",
+    "information technology", "computer engineering",
+    # Sentence fragments / noise
+    "customer satisfaction", "monitoring system",
 }
 
 VALID_LABELS = {

@@ -19,8 +19,9 @@ from .taxonomy_mapper import TaxonomyMapper
 # ── Config ───────────────────────────────────────────────────────────────────
 
 MODEL_ID   = "dineshsivaji/gliner-it-job-skills-ner"
-THRESHOLD  = 0.75
+THRESHOLD  = 0.6
 CHUNK_MAX  = 1200  # ~300 tokens, safely under model max 384
+CHUNK_OVERLAP = 200  # ~50 tokens overlap to catch boundary-straddling entities
 
 # Labels the model was fine-tuned on (high confidence)
 TRAINED_LABELS = [
@@ -41,37 +42,74 @@ LABELS = TRAINED_LABELS + ZEROSHOT_LABELS
 # Use a higher threshold for zero-shot labels to reduce false positives
 ZEROSHOT_THRESHOLD = 0.75
 
+# ── Normalisation ──────────────────────────────────────────────────────────
+
+# Common suffix patterns that create duplicate skill entries
+_SUFFIX_RE = re.compile(r"[.\-]?js$", re.IGNORECASE)
+_STRIP_CHARS = " ,.;:!?\"'`()[]{}/-–—"
+
+
+def normalise_skill(text: str) -> str:
+    """
+    Normalise a skill string for deduplication.
+
+    Collapses variants like 'React.js', 'ReactJS', 'react' into the same key.
+    """
+    text = text.lower().strip().strip(_STRIP_CHARS)
+    text = re.sub(r"\s+", " ", text)
+    # Remove trailing .js / -js / js (but not the whole string)
+    stripped = _SUFFIX_RE.sub("", text).strip()
+    return stripped if stripped else text
+
 # ── Chunking ─────────────────────────────────────────────────────────────────
 
-def chunk_text(text: str, max_chars: int = CHUNK_MAX) -> list[str]:
-    """Split text on paragraph/sentence boundaries to stay under model max length."""
+def chunk_text(text: str, max_chars: int = CHUNK_MAX, overlap: int = CHUNK_OVERLAP) -> list[str]:
+    """
+    Split text into overlapping chunks to stay under model max length.
+
+    First splits on paragraph boundaries. Paragraphs that fit go through as-is.
+    Paragraphs that exceed max_chars are split into overlapping windows at the
+    nearest word boundary so entities straddling a split point are captured by
+    at least one chunk.
+    """
     text = text.strip()
+    if not text:
+        return []
     if len(text) <= max_chars:
-        return [text] if text else []
-    chunks = []
-    for para in re.split(r"\n\s*\n", text):
-        para = para.strip()
-        if not para:
-            continue
+        return [text]
+
+    # Split into paragraphs first (natural semantic boundaries)
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+
+    chunks: list[str] = []
+    for para in paragraphs:
         if len(para) <= max_chars:
             chunks.append(para)
             continue
-        for part in re.split(r"(?<=[.\n])\s+", para):
-            part = part.strip()
-            if not part:
-                continue
-            if len(part) <= max_chars:
-                chunks.append(part)
+
+        # Further split long paragraphs on sentence/line boundaries
+        sentences = [s.strip() for s in re.split(r"(?<=[.\n])\s+", para) if s.strip()]
+
+        for sent in sentences:
+            if len(sent) <= max_chars:
+                chunks.append(sent)
             else:
+                # Sliding window with overlap for very long blocks
                 start = 0
-                while start < len(part):
-                    end = min(start + max_chars, len(part))
-                    if end < len(part):
-                        last_space = part.rfind(" ", start, end + 1)
+                while start < len(sent):
+                    end = min(start + max_chars, len(sent))
+                    # Snap to word boundary
+                    if end < len(sent):
+                        last_space = sent.rfind(" ", start, end + 1)
                         if last_space > start:
                             end = last_space + 1
-                    chunks.append(part[start:end].strip())
-                    start = end
+                    chunk = sent[start:end].strip()
+                    if chunk:
+                        chunks.append(chunk)
+                    # Step forward by (max_chars - overlap) instead of max_chars
+                    step = max(end - start - overlap, 1)
+                    start += step
+
     return [c for c in chunks if c]
 
 
@@ -123,17 +161,15 @@ class ResumeParser:
                     self.model.predict_entities(chunk, ZEROSHOT_LABELS, threshold=ZEROSHOT_THRESHOLD)
                 )
 
-        # Deduplicate by (text, label), keep highest score
-        seen: dict[tuple[str, str], float] = {}
+        # Deduplicate by normalised (text, label), keep highest score + best display text
+        seen: dict[tuple[str, str], dict] = {}
         for e in raw_entities:
-            key = (e["text"].strip().lower(), e["label"])
-            if key not in seen or e["score"] > seen[key]:
-                seen[key] = e["score"]
+            norm = normalise_skill(e["text"]) if e["label"] == "TECHNICAL_SKILL" else e["text"].strip().lower()
+            key = (norm, e["label"])
+            if key not in seen or e["score"] > seen[key]["score"]:
+                seen[key] = {"text": e["text"].strip(), "label": e["label"], "score": e["score"]}
 
-        deduped = [
-            {"text": span_text, "label": label, "score": score}
-            for (span_text, label), score in seen.items()
-        ]
+        deduped = list(seen.values())
 
         # Enrich TECHNICAL_SKILL with fine-grained category
         enriched = self.mapper.enrich(deduped)
@@ -162,6 +198,8 @@ class ResumeParser:
 
                     # Recompute category per atomic skill
                     cat = self.mapper.map(skill)
+                    if cat == "UNCATEGORIZED":
+                        continue
                     result["TECHNICAL_SKILL"].setdefault(cat, [])
                     if skill not in result["TECHNICAL_SKILL"][cat]:
                         result["TECHNICAL_SKILL"][cat].append(skill)

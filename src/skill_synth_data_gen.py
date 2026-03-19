@@ -293,6 +293,48 @@ HARD_NEGATIVE_TEMPLATES = [
     ("The Nuclear Physicist calculated the lambda decay constant for the isotope.",
      [{"text": "Nuclear Physicist", "label": "JOB_TITLE"}]),
 
+    # --- Academic fields / degree names (NOT skills) ---
+    ("The Student earned a degree in computer science from a top university.",
+     [{"text": "Student", "label": "JOB_TITLE"}]),
+    ("A Graduate received a bachelor's in information technology and started job hunting.",
+     [{"text": "Graduate", "label": "JOB_TITLE"}]),
+    ("The Applicant held a master's in computer engineering with a focus on hardware design.",
+     [{"text": "Applicant", "label": "JOB_TITLE"}]),
+    ("A Career Counselor advised students studying management information systems.",
+     [{"text": "Career Counselor", "label": "JOB_TITLE"}]),
+    ("The Professor taught computer science for twenty years before retiring.",
+     [{"text": "Professor", "label": "JOB_TITLE"}]),
+    ("A Dean restructured the information technology department to add new courses.",
+     [{"text": "Dean", "label": "JOB_TITLE"}]),
+
+    # --- Generic process phrases (NOT skills) ---
+    ("The Team Lead focused on application development and stakeholder alignment.",
+     [{"text": "Team Lead", "label": "JOB_TITLE"}]),
+    ("A Project Manager oversaw requirements gathering sessions with the client.",
+     [{"text": "Project Manager", "label": "JOB_TITLE"}]),
+    ("The QA Lead was responsible for product testing and deployment every sprint.",
+     [{"text": "QA Lead", "label": "JOB_TITLE"}]),
+    ("A Scrum Master emphasized scripting and coding best practices during the retrospective.",
+     [{"text": "Scrum Master", "label": "JOB_TITLE"}]),
+    ("The UX Designer improved web application design based on usability research.",
+     [{"text": "UX Designer", "label": "JOB_TITLE"}]),
+    ("A Product Owner prioritized UI testing in the backlog for the release.",
+     [{"text": "Product Owner", "label": "JOB_TITLE"}]),
+
+    # --- UI components / project artifacts (NOT skills) ---
+    ("The Frontend Developer built a file browser for the document management system.",
+     [{"text": "Frontend Developer", "label": "JOB_TITLE"}]),
+    ("A Software Engineer implemented a code editor with syntax highlighting features.",
+     [{"text": "Software Engineer", "label": "JOB_TITLE"}]),
+    ("The Mobile Developer added a chat window to the customer support application.",
+     [{"text": "Mobile Developer", "label": "JOB_TITLE"}]),
+
+    # --- Sentence fragment noise (NOT skills) ---
+    ("The Customer Success Manager worked to improve customer satisfaction scores.",
+     [{"text": "Customer Success Manager", "label": "JOB_TITLE"}]),
+    ("A Site Reliability Engineer deployed an integrated agent monitoring system.",
+     [{"text": "Site Reliability Engineer", "label": "JOB_TITLE"}]),
+
     # --- Mixed: real skill + ambiguous non-skill word ---
     ("The Backend Developer brewed Java coffee while debugging a PostgreSQL query.",
      [{"text": "Backend Developer", "label": "JOB_TITLE"},
