@@ -59,6 +59,10 @@ RAW_TAXONOMY: dict[str, str] = {
     "haskell":          "PROGRAMMING_LANGUAGE",
     "lua":              "PROGRAMMING_LANGUAGE",
     "groovy":           "PROGRAMMING_LANGUAGE",
+    "c":                "PROGRAMMING_LANGUAGE",
+    "objective-c":      "PROGRAMMING_LANGUAGE",
+    "julia":            "PROGRAMMING_LANGUAGE",
+    "zig":              "PROGRAMMING_LANGUAGE",
 
     # ── PYTHON_ECOSYSTEM ─────────────────────────────────────────────────────
     "django":           "PYTHON_ECOSYSTEM",
@@ -122,6 +126,7 @@ RAW_TAXONOMY: dict[str, str] = {
     "micronaut":        "JAVA_ECOSYSTEM",
     "struts":           "JAVA_ECOSYSTEM",
     "tomcat":           "JAVA_ECOSYSTEM",
+    "jpa":              "JAVA_ECOSYSTEM",
 
     # ── AI_ML ────────────────────────────────────────────────────────────────
     "tensorflow":       "AI_ML",
@@ -143,10 +148,15 @@ RAW_TAXONOMY: dict[str, str] = {
     "mlflow":           "AI_ML",
     "wandb":            "AI_ML",
     "computer vision":  "AI_ML",
-    "nlp":              "AI_ML",
+    "nlp":                        "AI_ML",
+    "natural language processing": "AI_ML",
     "machine learning": "AI_ML",
     "deep learning":    "AI_ML",
     "neural network":   "AI_ML",
+    "neural networks":  "AI_ML",
+    "reinforcement learning": "AI_ML",
+    "generative ai":    "AI_ML",
+    "weights and biases": "AI_ML",
     "gliner":           "AI_ML",
 
     # ── CLOUD ────────────────────────────────────────────────────────────────
@@ -278,6 +288,9 @@ RAW_TAXONOMY: dict[str, str] = {
     "event driven":           "DISTRIBUTED_SYSTEMS",
     "rest":                   "DISTRIBUTED_SYSTEMS",
     "rest api":               "DISTRIBUTED_SYSTEMS",
+    "consensus algorithms":   "DISTRIBUTED_SYSTEMS",
+    "scalability":            "DISTRIBUTED_SYSTEMS",
+    "fault tolerance":        "DISTRIBUTED_SYSTEMS",
 }
 
 # ── Entity blocklist ─────────────────────────────────────────────────────────
