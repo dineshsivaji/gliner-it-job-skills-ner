@@ -24,12 +24,17 @@ This repo contains:
 
 ## Project layout
 
-- `src/relabel_dataset.py` — collapse many IT labels into:
-  - `TECHNICAL_SKILL`
-  - `JOB_TITLE`
+- `src/skill_synth_data_gen.py` — generates synthetic training examples with hard negatives
+- `src/relabel_dataset.py` — collapses many fine-grained IT labels into `TECHNICAL_SKILL` and `JOB_TITLE`
 - `src/train_gliner_resume.py` — fine-tunes **GLiNER medium** on the relabelled dataset
 - `src/taxonomy_mapper.py` — maps each `TECHNICAL_SKILL` span to a fine-grained category
 - `src/resume_parser.py` — CLI tool to parse resumes using the fine-tuned model + taxonomy
+- `src/find_uncategorized.py` — discovers skills the model extracts but the taxonomy can't categorize
+- `app.py` — Gradio web UI for interactive resume parsing
+- `eval_model.py` — evaluation script with P/R/F1/F2 metrics and threshold sweep
+- `validate_data.py` — data quality audit (trailing punctuation, blocklist violations, etc.)
+- `tests/` — unit tests for resume parser and taxonomy mapper
+- `docs/` — PROJECT_SUMMARY.md and DEEP_DIVE.md
 - `pyproject.toml` — project metadata and dependencies (for `uv`)
 
 ---
@@ -87,7 +92,13 @@ The original synthetic dataset contains many IT-related labels (`PYTHON_ECOSYSTE
 - Job-related labels → `JOB_TITLE`
 - Sparse labels (e.g. `SOFT_SKILL`, `EDUCATION`, `CERTIFICATION`, `YEARS_OF_EXPERIENCE`) are **dropped** and handled zero-shot at inference if needed.
 
-Run (paths are set up for Kaggle by default):
+Run locally (defaults to `src/training_data/` paths):
+
+```bash
+uv run python -m src.relabel_dataset
+```
+
+Or specify custom paths (e.g. on Kaggle):
 
 ```bash
 uv run python -m src.relabel_dataset \
@@ -112,9 +123,9 @@ uv run python -m src.train_gliner_resume
 ```
 
 The script:
-- Loads the relabelled dataset (`/kaggle/working/synthetic_gliner_relabelled.json`)
-- Splits into train/test
-- Trains for a target number of steps
+- Loads the relabelled dataset (defaults to `src/training_data/synthetic_gliner_relabelled.json`)
+- Splits into train/test (90/10)
+- Trains for 3 epochs (configurable via `--epochs`)
 - Saves the model locally and (optionally) uploads it to the configured Hugging Face repo
 
 > Note: The Hugging Face upload section expects `HF_TOKEN` to be configured as a Kaggle secret.
@@ -133,7 +144,8 @@ The script:
 2. **TaxonomyMapper**
    - Maps each `TECHNICAL_SKILL` span into one of:
      - `PROGRAMMING_LANGUAGE`, `PYTHON_ECOSYSTEM`, `JS_ECOSYSTEM`, `JAVA_ECOSYSTEM`
-     - `CLOUD`, `DEVOPS`, `DATABASE`, `AI_ML`, `MOBILE`, `IT_TOOLS`, etc.
+     - `CLOUD`, `DEVOPS`, `DATABASE`, `AI_ML`, `MOBILE`, `IT_TOOLS`
+     - `BIG_DATA`, `DISTRIBUTED_SYSTEMS`
    - Falls back to `UNCATEGORIZED` when a skill is unknown.
 
 Example usage:
@@ -183,9 +195,21 @@ This prints example mappings and a grouped summary by category.
 
 ---
 
+## Gradio web UI
+
+The project includes a Gradio interface for interactive resume parsing (used for Hugging Face Spaces deployment).
+
+```bash
+uv run python app.py
+```
+
+Paste resume text or upload a file (.txt/.pdf) and get structured skill extraction results in the browser.
+
+---
+
 ## Notes / assumptions
 
-- The project targets **Python 3.10+**.
-- Training code assumes a **Kaggle** environment with GPU and secrets configured.
+- The project targets **Python 3.11+**.
+- Training code assumes a **Kaggle** environment with GPU and secrets configured (but paths are configurable for local use).
 - The inference script is designed to run locally (e.g. on macOS) with the model downloaded from Hugging Face.
 
